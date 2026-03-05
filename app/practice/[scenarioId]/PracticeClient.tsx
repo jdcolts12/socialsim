@@ -21,29 +21,67 @@ interface Message {
 interface Feedback {
   confidence: number;
   clarity: number;
+  professionalism?: number;
   suggestions: string[];
 }
 
 const MESSAGES_BEFORE_FEEDBACK = 5;
+
+async function fetchAIResponse(scenarioId: string, messages: { role: string; content: string }[]): Promise<string> {
+  const res = await fetch('/api/chat', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ scenarioId, messages }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'Failed to get AI response');
+  return data.content;
+}
+
+async function fetchFeedback(
+  scenarioName: string,
+  messages: { role: string; content: string }[]
+): Promise<Feedback> {
+  const res = await fetch('/api/feedback', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ scenarioName, messages }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'Failed to get feedback');
+  return data;
+}
 
 export default function PracticeClient({ scenario }: { scenario: Scenario }) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [feedback, setFeedback] = useState<Feedback | null>(null);
   const [isTyping, setIsTyping] = useState(false);
+  const [useOpenAI, setUseOpenAI] = useState<boolean | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (messages.length === 0) {
-      setMessages([
-        {
-          id: '0',
-          role: 'assistant',
-          content: getOpener(scenario.id as ScenarioId),
-        },
-      ]);
+      const initWithOpenAI = async () => {
+        setIsTyping(true);
+        try {
+          const opener = await fetchAIResponse(scenario.id, [
+            { role: 'user', content: '[Please start the conversation as your character. Say your first line.]' },
+          ]);
+          setMessages([{ id: '0', role: 'assistant', content: opener }]);
+          setUseOpenAI(true);
+        } catch {
+          setMessages([
+            { id: '0', role: 'assistant', content: getOpener(scenario.id as ScenarioId) },
+          ]);
+          setUseOpenAI(false);
+        } finally {
+          setIsTyping(false);
+        }
+      };
+      initWithOpenAI();
     }
-  }, [scenario.id, messages.length]);
+  }, [scenario.id]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -65,24 +103,60 @@ export default function PracticeClient({ scenario }: { scenario: Scenario }) {
     setInput('');
     setIsTyping(true);
 
-    // Simulate AI response delay
-    await new Promise((r) => setTimeout(r, 800 + Math.random() * 400));
+    try {
+      let aiContent: string;
+      if (useOpenAI) {
+        const chatMessages = [...messages, userMsg].map((m) => ({
+          role: m.role,
+          content: m.content,
+        }));
+        aiContent = await fetchAIResponse(scenario.id, chatMessages);
+      } else {
+        await new Promise((r) => setTimeout(r, 800 + Math.random() * 400));
+        aiContent = getResponse(scenario.id as ScenarioId, userMessageCount);
+      }
 
-    const aiMsg: Message = {
-      id: (Date.now() + 1).toString(),
-      role: 'assistant',
-      content: getResponse(scenario.id as ScenarioId, userMessageCount),
-    };
-    setMessages((prev) => [...prev, aiMsg]);
-    setIsTyping(false);
+      const aiMsg: Message = {
+        id: (Date.now() + 1).toString(),
+        role: 'assistant',
+        content: aiContent,
+      };
+      setMessages((prev) => [...prev, aiMsg]);
 
-    if (userMessageCount + 1 >= MESSAGES_BEFORE_FEEDBACK) {
-      const msgsForFeedback = [...messages, userMsg, aiMsg];
-      setFeedback(
-        generateFeedback(
-          msgsForFeedback.map((m) => ({ role: m.role, content: m.content }))
-        )
-      );
+      if (userMessageCount + 1 >= MESSAGES_BEFORE_FEEDBACK) {
+        const msgsForFeedback = [...messages, userMsg, aiMsg];
+        if (useOpenAI) {
+          try {
+            const fb = await fetchFeedback(
+              scenario.name,
+              msgsForFeedback.map((m) => ({ role: m.role, content: m.content }))
+            );
+            setFeedback(fb);
+          } catch {
+            setFeedback(
+              generateFeedback(
+                msgsForFeedback.map((m) => ({ role: m.role, content: m.content }))
+              )
+            );
+          }
+        } else {
+          setFeedback(
+            generateFeedback(
+              msgsForFeedback.map((m) => ({ role: m.role, content: m.content }))
+            )
+          );
+        }
+      }
+    } catch (err) {
+      console.error(err);
+      const aiMsg: Message = {
+        id: (Date.now() + 1).toString(),
+        role: 'assistant',
+        content: "I'm sorry, I had trouble responding. Please try again.",
+      };
+      setMessages((prev) => [...prev, aiMsg]);
+    } finally {
+      setIsTyping(false);
     }
   };
 
@@ -92,7 +166,7 @@ export default function PracticeClient({ scenario }: { scenario: Scenario }) {
         <div className="mx-auto max-w-2xl">
           <h1 className="mb-8 text-2xl font-bold">Your feedback</h1>
 
-          <div className="mb-8 grid gap-6 sm:grid-cols-2">
+          <div className="mb-8 grid gap-6 sm:grid-cols-3">
             <div className="rounded-2xl border border-zinc-700/50 bg-zinc-900/50 p-6">
               <p className="mb-2 text-sm text-zinc-500">Confidence</p>
               <p className="text-4xl font-bold text-indigo-400">{feedback.confidence}%</p>
@@ -101,6 +175,12 @@ export default function PracticeClient({ scenario }: { scenario: Scenario }) {
               <p className="mb-2 text-sm text-zinc-500">Clarity</p>
               <p className="text-4xl font-bold text-indigo-400">{feedback.clarity}%</p>
             </div>
+            {feedback.professionalism != null && (
+              <div className="rounded-2xl border border-zinc-700/50 bg-zinc-900/50 p-6">
+                <p className="mb-2 text-sm text-zinc-500">Professionalism</p>
+                <p className="text-4xl font-bold text-indigo-400">{feedback.professionalism}%</p>
+              </div>
+            )}
           </div>
 
           <div className="mb-10 rounded-2xl border border-zinc-700/50 bg-zinc-900/50 p-6">
@@ -193,7 +273,7 @@ export default function PracticeClient({ scenario }: { scenario: Scenario }) {
             <button
               type="submit"
               disabled={!input.trim() || isTyping}
-              className="rounded-xl bg-indigo-600 px-6 py-3 font-medium text-white transition hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="rounded-xl bg-indigo-600 px-6 py-3 font-medium text-white transition hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-50"
             >
               Send
             </button>

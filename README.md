@@ -1,41 +1,42 @@
-# Social Sim
+# SocialSim
 
-A social simulation game built with Next.js. Manage sims, keep their needs up (hunger, energy, social, fun), and watch them thrive!
+Practice real-life conversations with AI. Choose a scenario, chat with an AI roleplay partner, and get feedback on your confidence, clarity, and professionalism.
 
-## Run locally
+## Setup
+
+### 1. Install dependencies
 
 ```bash
 npm install
+```
+
+### 2. Add your OpenAI API key
+
+Create a `.env.local` file in the project root:
+
+```
+OPENAI_API_KEY=sk-your-key-here
+```
+
+Get your API key from [platform.openai.com/api-keys](https://platform.openai.com/api-keys).
+
+### 3. Run locally
+
+```bash
 npm run dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000).
 
-## Deploy to Vercel (live website)
+## Deploy to Vercel
 
-### Option 1: Deploy with Vercel CLI (fastest)
+1. Push to GitHub and import the repo in [vercel.com](https://vercel.com)
+2. In your Vercel project: **Settings** → **Environment Variables**
+3. Add `OPENAI_API_KEY` with your OpenAI API key
+4. Redeploy
 
-1. Install Vercel CLI: `npm i -g vercel`
-2. From this folder, run: `vercel`
-3. Follow the prompts (login if needed)
-4. Your app will be live at a URL like `social-sim-xxx.vercel.app`
-
-For production: `vercel --prod`
-
-### Option 2: Deploy via GitHub
-
-1. Create a new repo on GitHub and push this project
-2. Go to [vercel.com](https://vercel.com) → **New Project**
-3. Import your GitHub repository
-4. Vercel auto-detects Next.js — click **Deploy**
-5. Your app goes live in ~1 minute
-
-### Option 3: Deploy via Vercel Dashboard
-
-1. Go to [vercel.com/new](https://vercel.com/new)
-2. Import your project (Git, or upload a ZIP)
-3. Deploy
+Without the API key, the app falls back to mock responses.
 
 ---
 
-Built with Next.js 14, React, and Tailwind CSS.
+Built with Next.js 14, React, Tailwind CSS, and OpenAI.
