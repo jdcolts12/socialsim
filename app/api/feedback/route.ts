@@ -20,20 +20,20 @@ export async function POST(req: NextRequest) {
 
     const openai = new OpenAI({ apiKey });
 
-    const userMessages = messages
-      .filter((m: { role: string }) => m.role === 'user')
-      .map((m: { content: string }) => m.content) as string[];
-
-    const conversationText = userMessages
-      .map((msg: string, i: number) => `User message ${i + 1}: "${msg}"`)
+    const conversationText = messages
+      .map((m: { role: string; content: string }, i: number) => {
+        const speaker = m.role === 'user' ? 'User' : 'AI Partner';
+        return `${speaker}: "${m.content}"`;
+      })
       .join('\n\n');
 
     const userPrompt = `Scenario: ${scenarioName || 'Social conversation'}
 
-The user's messages in the conversation:
+Full conversation (read the full exchange to understand context and how the user responded to different prompts):
+
 ${conversationText}
 
-Analyze the user's responses and return the JSON feedback.`;
+Analyze the USER's messages only, but use the full conversation for context. Score honestly using the rubric. Return the JSON feedback.`;
 
     const completion = await openai.chat.completions.create({
       model: 'gpt-4o-mini',
@@ -41,8 +41,8 @@ Analyze the user's responses and return the JSON feedback.`;
         { role: 'system', content: FEEDBACK_SYSTEM_PROMPT },
         { role: 'user', content: userPrompt },
       ],
-      max_tokens: 400,
-      temperature: 0.3,
+      max_tokens: 500,
+      temperature: 0.2,
     });
 
     const content = completion.choices[0]?.message?.content?.trim();
