@@ -162,49 +162,51 @@ export default function PracticeClient({ scenario }: { scenario: Scenario }) {
 
   if (feedback) {
     return (
-      <main className="min-h-screen px-6 py-12">
+      <main className="min-h-screen px-6 py-16">
         <div className="mx-auto max-w-2xl">
-          <h1 className="mb-8 text-2xl font-bold">Your feedback</h1>
+          <h1 className="mb-12 text-2xl font-semibold text-[var(--text)]">
+            Your feedback
+          </h1>
 
-          <div className="mb-8 grid gap-6 sm:grid-cols-3">
-            <div className="rounded-2xl border border-zinc-700/50 bg-zinc-900/50 p-6">
-              <p className="mb-2 text-sm text-zinc-500">Confidence</p>
-              <p className="text-4xl font-bold text-indigo-400">{feedback.confidence}%</p>
+          <div className="mb-10 grid gap-5 sm:grid-cols-3">
+            <div className="rounded-2xl border border-[var(--border)] bg-[var(--bg-card)] p-6 shadow-sm">
+              <p className="mb-2 text-sm text-[var(--text-muted)]">Confidence</p>
+              <p className="text-4xl font-semibold text-[var(--accent)]">{feedback.confidence}%</p>
             </div>
-            <div className="rounded-2xl border border-zinc-700/50 bg-zinc-900/50 p-6">
-              <p className="mb-2 text-sm text-zinc-500">Clarity</p>
-              <p className="text-4xl font-bold text-indigo-400">{feedback.clarity}%</p>
+            <div className="rounded-2xl border border-[var(--border)] bg-[var(--bg-card)] p-6 shadow-sm">
+              <p className="mb-2 text-sm text-[var(--text-muted)]">Clarity</p>
+              <p className="text-4xl font-semibold text-[var(--accent)]">{feedback.clarity}%</p>
             </div>
             {feedback.professionalism != null && (
-              <div className="rounded-2xl border border-zinc-700/50 bg-zinc-900/50 p-6">
-                <p className="mb-2 text-sm text-zinc-500">Professionalism</p>
-                <p className="text-4xl font-bold text-indigo-400">{feedback.professionalism}%</p>
+              <div className="rounded-2xl border border-[var(--border)] bg-[var(--bg-card)] p-6 shadow-sm">
+                <p className="mb-2 text-sm text-[var(--text-muted)]">Professionalism</p>
+                <p className="text-4xl font-semibold text-[var(--accent)]">{feedback.professionalism}%</p>
               </div>
             )}
           </div>
 
-          <div className="mb-10 rounded-2xl border border-zinc-700/50 bg-zinc-900/50 p-6">
-            <h2 className="mb-4 font-semibold">Suggestions for improvement</h2>
-            <ul className="space-y-2">
+          <div className="mb-12 rounded-2xl border border-[var(--border)] bg-[var(--bg-card)] p-6 shadow-sm">
+            <h2 className="mb-4 font-medium text-[var(--text)]">Suggestions for improvement</h2>
+            <ul className="space-y-3">
               {feedback.suggestions.map((s, i) => (
-                <li key={i} className="flex gap-2 text-zinc-300">
-                  <span className="text-indigo-400">•</span>
+                <li key={i} className="flex gap-2 text-[var(--text-muted)]">
+                  <span className="text-[var(--accent)]">•</span>
                   {s}
                 </li>
               ))}
             </ul>
           </div>
 
-          <div className="flex gap-4">
+          <div className="flex flex-wrap gap-4">
             <Link
               href={`/practice/${scenario.id}`}
-              className="rounded-xl bg-indigo-600 px-6 py-3 font-medium text-white transition hover:bg-indigo-500"
+              className="inline-flex min-h-[48px] min-w-[140px] items-center justify-center rounded-full bg-[var(--accent)] px-8 py-3 font-medium text-white transition hover:bg-[var(--accent-light)]"
             >
               Try again
             </Link>
             <Link
               href="/scenarios"
-              className="rounded-xl border border-zinc-600 px-6 py-3 font-medium transition hover:bg-zinc-800"
+              className="inline-flex min-h-[48px] min-w-[180px] items-center justify-center rounded-full border border-[var(--border)] bg-[var(--bg-card)] px-8 py-3 font-medium text-[var(--text)] transition hover:bg-[var(--accent-soft)]"
             >
               Choose another scenario
             </Link>
@@ -216,17 +218,20 @@ export default function PracticeClient({ scenario }: { scenario: Scenario }) {
 
   return (
     <main className="flex min-h-screen flex-col">
-      <header className="border-b border-zinc-800 px-6 py-4">
+      <header className="border-b border-[var(--border)] bg-[var(--bg-card)] px-6 py-5">
         <div className="mx-auto flex max-w-3xl items-center justify-between">
-          <Link href="/scenarios" className="text-sm text-zinc-500 hover:text-zinc-300">
+          <Link
+            href="/scenarios"
+            className="text-[var(--text-muted)] transition hover:text-[var(--text)]"
+          >
             ← Back
           </Link>
-          <h1 className="font-semibold">{scenario.name}</h1>
+          <h1 className="font-medium text-[var(--text)]">{scenario.name}</h1>
           <div className="w-12" />
         </div>
       </header>
 
-      <div className="flex-1 overflow-y-auto px-6 py-8">
+      <div className="flex-1 overflow-y-auto px-6 py-10">
         <div className="mx-auto max-w-3xl space-y-6">
           {messages.map((msg) => (
             <div
@@ -234,10 +239,10 @@ export default function PracticeClient({ scenario }: { scenario: Scenario }) {
               className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
             >
               <div
-                className={`max-w-[85%] rounded-2xl px-4 py-3 ${
+                className={`max-w-[85%] rounded-2xl px-5 py-4 ${
                   msg.role === 'user'
-                    ? 'bg-indigo-600 text-white'
-                    : 'bg-zinc-800 text-zinc-100'
+                    ? 'bg-[var(--accent)] text-white'
+                    : 'bg-[var(--bg-card)] text-[var(--text)] border border-[var(--border)] shadow-sm'
                 }`}
               >
                 <p className="whitespace-pre-wrap">{msg.content}</p>
@@ -246,11 +251,11 @@ export default function PracticeClient({ scenario }: { scenario: Scenario }) {
           ))}
           {isTyping && (
             <div className="flex justify-start">
-              <div className="rounded-2xl bg-zinc-800 px-4 py-3">
-                <span className="inline-flex gap-1">
-                  <span className="h-2 w-2 animate-bounce rounded-full bg-zinc-500 [animation-delay:0ms]" />
-                  <span className="h-2 w-2 animate-bounce rounded-full bg-zinc-500 [animation-delay:150ms]" />
-                  <span className="h-2 w-2 animate-bounce rounded-full bg-zinc-500 [animation-delay:300ms]" />
+              <div className="rounded-2xl border border-[var(--border)] bg-[var(--bg-card)] px-5 py-4 shadow-sm">
+                <span className="inline-flex gap-1.5">
+                  <span className="h-2 w-2 animate-bounce rounded-full bg-[var(--accent-light)] [animation-delay:0ms]" />
+                  <span className="h-2 w-2 animate-bounce rounded-full bg-[var(--accent-light)] [animation-delay:150ms]" />
+                  <span className="h-2 w-2 animate-bounce rounded-full bg-[var(--accent-light)] [animation-delay:300ms]" />
                 </span>
               </div>
             </div>
@@ -259,7 +264,7 @@ export default function PracticeClient({ scenario }: { scenario: Scenario }) {
         </div>
       </div>
 
-      <footer className="border-t border-zinc-800 px-6 py-4">
+      <footer className="border-t border-[var(--border)] bg-[var(--bg-card)] px-6 py-5">
         <form onSubmit={handleSubmit} className="mx-auto max-w-3xl">
           <div className="flex gap-3">
             <input
@@ -267,18 +272,18 @@ export default function PracticeClient({ scenario }: { scenario: Scenario }) {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder="Type your response..."
-              className="flex-1 rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-3 text-white placeholder-zinc-500 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+              className="flex-1 rounded-full border border-[var(--border)] bg-[var(--bg)] px-5 py-4 text-[var(--text)] placeholder-[var(--text-muted)] focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-soft)]"
               disabled={isTyping}
             />
             <button
               type="submit"
               disabled={!input.trim() || isTyping}
-              className="rounded-xl bg-indigo-600 px-6 py-3 font-medium text-white transition hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-50"
+              className="min-h-[52px] min-w-[120px] rounded-full bg-[var(--accent)] px-6 py-3 font-medium text-white transition hover:bg-[var(--accent-light)] disabled:cursor-not-allowed disabled:opacity-50"
             >
               Send
             </button>
           </div>
-          <p className="mt-2 text-center text-xs text-zinc-500">
+          <p className="mt-3 text-center text-sm text-[var(--text-muted)]">
             {userMessageCount} / {MESSAGES_BEFORE_FEEDBACK} messages — feedback after {MESSAGES_BEFORE_FEEDBACK}
           </p>
         </form>

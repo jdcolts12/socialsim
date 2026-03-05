@@ -2,7 +2,20 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap');
+
+:root {
+  --bg: #f8f7f4;
+  --bg-card: #ffffff;
+  --text: #2d2d2d;
+  --text-muted: #6b6b6b;
+  --accent: #7c9a8b;
+  --accent-light: #a8c4b8;
+  --accent-soft: #e8f0ed;
+  --lavender: #b8a9c9;
+  --lavender-soft: #f0ecf4;
+  --border: #e8e6e1;
+}
 
 * {
   box-sizing: border-box;
@@ -12,8 +25,8 @@
 
 html,
 body {
-  font-family: 'Inter', system-ui, sans-serif;
+  font-family: 'DM Sans', system-ui, sans-serif;
   min-height: 100vh;
-  background: #09090b;
-  color: #fafafa;
+  background: var(--bg);
+  color: var(--text);
 }

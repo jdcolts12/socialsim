@@ -3,25 +3,34 @@ import { SCENARIOS } from '@/lib/scenarios';
 
 export default function ScenariosPage() {
   return (
-    <main className="min-h-screen px-6 py-12">
-      <div className="mx-auto max-w-3xl">
-        <Link href="/" className="mb-8 inline-block text-sm text-zinc-500 transition hover:text-zinc-300">
+    <main className="min-h-screen px-6 py-16">
+      <div className="mx-auto max-w-2xl">
+        <Link
+          href="/"
+          className="mb-12 inline-block text-[var(--text-muted)] transition hover:text-[var(--text)]"
+        >
           ← Back
         </Link>
-        <h1 className="mb-2 text-3xl font-bold">Choose a scenario</h1>
-        <p className="mb-10 text-zinc-400">Pick a situation to practice your conversation skills</p>
+        <h1 className="mb-2 text-3xl font-semibold text-[var(--text)]">
+          Choose a scenario
+        </h1>
+        <p className="mb-12 text-[var(--text-muted)]">
+          Pick a situation to practice your conversation skills
+        </p>
 
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="flex flex-col gap-4">
           {SCENARIOS.map((scenario) => (
             <Link
               key={scenario.id}
               href={`/practice/${scenario.id}`}
-              className="group rounded-2xl border border-zinc-700/50 bg-zinc-900/50 p-6 transition hover:border-indigo-500/50 hover:bg-zinc-900/80"
+              className="flex min-h-[88px] flex-col justify-center rounded-2xl border border-[var(--border)] bg-[var(--bg-card)] px-8 py-6 shadow-sm transition hover:border-[var(--accent)] hover:bg-[var(--accent-soft)]"
             >
-              <h2 className="mb-2 font-semibold text-white group-hover:text-indigo-400">
+              <h2 className="text-xl font-medium text-[var(--text)]">
                 {scenario.name}
               </h2>
-              <p className="text-sm text-zinc-500">{scenario.description}</p>
+              <p className="mt-1 text-[var(--text-muted)]">
+                {scenario.description}
+              </p>
             </Link>
           ))}
         </div>
