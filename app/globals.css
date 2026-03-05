@@ -2,7 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
 * {
   box-sizing: border-box;
@@ -12,16 +12,8 @@
 
 html,
 body {
-  font-family: 'Outfit', sans-serif;
+  font-family: 'Inter', system-ui, sans-serif;
   min-height: 100vh;
-  overflow-x: hidden;
-  background: #0a0a0c;
-  color: #f4f4f5;
-}
-
-body {
-  background:
-    radial-gradient(ellipse 90% 60% at 50% -10%, rgba(124, 58, 237, 0.12), transparent),
-    radial-gradient(ellipse 70% 50% at 100% 80%, rgba(236, 72, 153, 0.06), transparent),
-    #0a0a0c;
+  background: #09090b;
+  color: #fafafa;
 }
