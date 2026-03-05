@@ -26,16 +26,26 @@ export async function POST(req: NextRequest) {
       content: m.content,
     }));
 
-    const lastUserMsg = [...mappedMessages].reverse().find((m) => m.role === 'user');
-    const reminder =
-      lastUserMsg?.content && !lastUserMsg.content.includes('[Please start')
-        ? `\n\nREMINDER: They just said: "${lastUserMsg.content.slice(0, 150)}${lastUserMsg.content.length > 150 ? '...' : ''}" — Your response MUST directly react to this. Reference their words.`
-        : '';
+    // Replace last user message with instruction-wrapped version so the model MUST respond to it
+    const lastIdx = mappedMessages.length - 1;
+    const lastMsg = mappedMessages[lastIdx];
+    const isRealUserMessage =
+      lastMsg?.role === 'user' &&
+      lastMsg?.content &&
+      !lastMsg.content.includes('[Please start');
+
+    if (isRealUserMessage && lastMsg) {
+      const theirWords = (lastMsg.content as string).trim();
+      mappedMessages[lastIdx] = {
+        ...lastMsg,
+        content: `[What they said — respond directly to this. Reference their specific words.]\n\n${theirWords}`,
+      };
+    }
 
     const completion = await openai.chat.completions.create({
       model: 'gpt-4o',
       messages: [
-        { role: 'system', content: systemPrompt + reminder },
+        { role: 'system', content: systemPrompt },
         ...mappedMessages,
       ],
       max_tokens: 300,
