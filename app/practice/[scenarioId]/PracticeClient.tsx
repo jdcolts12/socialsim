@@ -4,7 +4,51 @@ import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { getOpener, getResponse } from '@/lib/aiResponses';
 import { generateFeedback } from '@/lib/feedback';
+import { useVoiceInput } from '@/lib/useVoiceInput';
+import { useVoiceOutput } from '@/lib/useVoiceOutput';
 import type { ScenarioId } from '@/lib/scenarios';
+
+function MicIcon({ isListening }: { isListening: boolean }) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={isListening ? 'text-red-500' : ''}
+    >
+      <path d="M12 2a3 3 0 0 1 3 3v7a3 3 0 0 1-6 0V5a3 3 0 0 1 3-3Z" />
+      <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+      <line x1="12" x2="12" y1="19" y2="22" />
+    </svg>
+  );
+}
+
+function SpeakerIcon({ active }: { active: boolean }) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={active ? 'text-[var(--accent)]' : ''}
+    >
+      <path d="M11 5L6 9H2v6h4l5 4V5Z" />
+      <path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
+      <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
+    </svg>
+  );
+}
 
 interface Scenario {
   id: string;
@@ -58,7 +102,22 @@ export default function PracticeClient({ scenario }: { scenario: Scenario }) {
   const [feedback, setFeedback] = useState<Feedback | null>(null);
   const [isTyping, setIsTyping] = useState(false);
   const [useOpenAI, setUseOpenAI] = useState<boolean | null>(null);
+  const [voiceOutput, setVoiceOutput] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const lastSpokenIdRef = useRef<string | null>(null);
+
+  const { speak: speakOutput } = useVoiceOutput();
+  const { isListening, isSupported: voiceInputSupported, toggleListening } = useVoiceInput((text) =>
+    setInput(text)
+  );
+
+  useEffect(() => {
+    const last = messages[messages.length - 1];
+    if (voiceOutput && last?.role === 'assistant' && last.id !== lastSpokenIdRef.current) {
+      lastSpokenIdRef.current = last.id;
+      speakOutput(last.content);
+    }
+  }, [messages, voiceOutput, speakOutput]);
 
   useEffect(() => {
     if (messages.length === 0) {
@@ -227,7 +286,14 @@ export default function PracticeClient({ scenario }: { scenario: Scenario }) {
             ← Back
           </Link>
           <h1 className="font-medium text-[var(--text)]">{scenario.name}</h1>
-          <div className="w-12" />
+          <button
+            type="button"
+            onClick={() => setVoiceOutput((v) => !v)}
+            className="flex h-10 w-10 items-center justify-center rounded-full transition hover:bg-[var(--accent-soft)]"
+            title={voiceOutput ? 'Turn off voice output' : 'Speak AI responses aloud'}
+          >
+            <SpeakerIcon active={voiceOutput} />
+          </button>
         </div>
       </header>
 
@@ -267,14 +333,27 @@ export default function PracticeClient({ scenario }: { scenario: Scenario }) {
       <footer className="border-t border-[var(--border)] bg-[var(--bg-card)] px-6 py-5">
         <form onSubmit={handleSubmit} className="mx-auto max-w-3xl">
           <div className="flex gap-3">
-            <input
-              type="text"
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              placeholder="Type your response..."
-              className="flex-1 rounded-full border border-[var(--border)] bg-[var(--bg)] px-5 py-4 text-[var(--text)] placeholder-[var(--text-muted)] focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-soft)]"
-              disabled={isTyping}
-            />
+            <div className="relative flex flex-1 items-center">
+              <input
+                type="text"
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                placeholder={voiceInputSupported ? 'Type or tap mic to speak...' : 'Type your response...'}
+                className="w-full rounded-full border border-[var(--border)] bg-[var(--bg)] px-5 py-4 pr-14 text-[var(--text)] placeholder-[var(--text-muted)] focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-soft)]"
+                disabled={isTyping}
+              />
+              {voiceInputSupported && (
+                <button
+                  type="button"
+                  onClick={toggleListening}
+                  disabled={isTyping}
+                  className="absolute right-2 flex h-10 w-10 items-center justify-center rounded-full transition hover:bg-[var(--accent-soft)] disabled:opacity-50"
+                  title={isListening ? 'Stop listening' : 'Start voice input'}
+                >
+                  <MicIcon isListening={isListening} />
+                </button>
+              )}
+            </div>
             <button
               type="submit"
               disabled={!input.trim() || isTyping}
