@@ -21,18 +21,25 @@ export async function POST(req: NextRequest) {
 
     const openai = new OpenAI({ apiKey });
     const systemPrompt = getRoleplaySystemPrompt(scenarioId as ScenarioId);
+    const mappedMessages = messages.map((m: { role: string; content: string }) => ({
+      role: m.role as 'user' | 'assistant' | 'system',
+      content: m.content,
+    }));
+
+    const lastUserMsg = [...mappedMessages].reverse().find((m) => m.role === 'user');
+    const reminder =
+      lastUserMsg?.content && !lastUserMsg.content.includes('[Please start')
+        ? `\n\nREMINDER: They just said: "${lastUserMsg.content.slice(0, 150)}${lastUserMsg.content.length > 150 ? '...' : ''}" — Your response MUST directly react to this. Reference their words.`
+        : '';
 
     const completion = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',
+      model: 'gpt-4o',
       messages: [
-        { role: 'system', content: systemPrompt },
-        ...messages.map((m: { role: string; content: string }) => ({
-          role: m.role as 'user' | 'assistant' | 'system',
-          content: m.content,
-        })),
+        { role: 'system', content: systemPrompt + reminder },
+        ...mappedMessages,
       ],
-      max_tokens: 250,
-      temperature: 0.85,
+      max_tokens: 300,
+      temperature: 0.9,
     });
 
     const content = completion.choices[0]?.message?.content?.trim();
