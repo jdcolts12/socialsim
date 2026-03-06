@@ -20,36 +20,33 @@ export async function POST(req: NextRequest) {
     }
 
     const openai = new OpenAI({ apiKey });
-    const systemPrompt = getRoleplaySystemPrompt(scenarioId as ScenarioId);
+    const basePrompt = getRoleplaySystemPrompt(scenarioId as ScenarioId);
     const mappedMessages = messages.map((m: { role: string; content: string }) => ({
       role: m.role as 'user' | 'assistant' | 'system',
       content: m.content,
     }));
 
-    // Replace last user message with instruction-wrapped version so the model MUST respond to it
-    const lastIdx = mappedMessages.length - 1;
-    const lastMsg = mappedMessages[lastIdx];
-    const isRealUserMessage =
-      lastMsg?.role === 'user' &&
-      lastMsg?.content &&
-      !lastMsg.content.includes('[Please start');
+    const lastUserMsg = [...mappedMessages].reverse().find((m) => m.role === 'user');
+    const isRealMessage =
+      lastUserMsg?.content &&
+      typeof lastUserMsg.content === 'string' &&
+      !lastUserMsg.content.includes('[Please start');
 
-    if (isRealUserMessage && lastMsg) {
-      const theirWords = (lastMsg.content as string).trim();
-      mappedMessages[lastIdx] = {
-        ...lastMsg,
-        content: `[What they said — respond directly to this. Reference their specific words.]\n\n${theirWords}`,
-      };
-    }
+    const reminder =
+      isRealMessage && lastUserMsg
+        ? `\n\n---\nThey just said: "${String(lastUserMsg.content).slice(0, 200)}${String(lastUserMsg.content).length > 200 ? '...' : ''}"\nRespond directly to this. Your reply must make sense as a response to the above.`
+        : '';
 
     const completion = await openai.chat.completions.create({
       model: 'gpt-4o',
       messages: [
-        { role: 'system', content: systemPrompt },
+        { role: 'system', content: basePrompt + reminder },
         ...mappedMessages,
       ],
-      max_tokens: 300,
-      temperature: 0.9,
+      max_tokens: 350,
+      temperature: 0.85,
+      frequency_penalty: 0.6,
+      presence_penalty: 0.4,
     });
 
     const content = completion.choices[0]?.message?.content?.trim();
