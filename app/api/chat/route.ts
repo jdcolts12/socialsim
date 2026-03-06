@@ -1,7 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
 import OpenAI from 'openai';
+
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
 import { getRoleplaySystemPrompt } from '@/lib/prompts';
 import type { ScenarioId } from '@/lib/scenarios';
+
+const VIBES = [
+  'You\'re feeling a bit tired but engaged.',
+  'You\'re in a good mood.',
+  'You\'re direct and to-the-point.',
+  'You\'re warm and curious.',
+  'You\'re slightly skeptical.',
+  'You\'re enthusiastic.',
+  'You\'re thoughtful and measured.',
+  'You\'re casual and relaxed.',
+];
 
 export async function POST(req: NextRequest) {
   try {
@@ -20,41 +34,64 @@ export async function POST(req: NextRequest) {
     }
 
     const openai = new OpenAI({ apiKey });
-    const mappedMessages = messages.map((m: { role: string; content: string }) => ({
-      role: m.role as 'user' | 'assistant' | 'system',
-      content: m.content,
-    }));
 
-    const lastUserMsg = [...mappedMessages].reverse().find((m) => m.role === 'user');
+    const lastUserMsg = [...messages].reverse().find((m: { role: string }) => m.role === 'user');
     const isRealMessage =
       lastUserMsg?.content &&
       typeof lastUserMsg.content === 'string' &&
       !lastUserMsg.content.includes('[Please start');
 
-    let messagesToSend = mappedMessages;
-
-    if (isRealMessage && lastUserMsg) {
-      const theirWords = String(lastUserMsg.content).trim();
-      const lastIdx = mappedMessages.length - 1;
-      messagesToSend = [...mappedMessages];
-      messagesToSend[lastIdx] = {
-        ...lastUserMsg,
-        content: `They said: "${theirWords}"\n\nRespond directly to this. Reference their words. Do not give a generic reply.`,
-      };
+    if (!isRealMessage || !lastUserMsg) {
+      const completion = await openai.chat.completions.create({
+        model: 'gpt-4o',
+        messages: [
+          { role: 'system', content: getRoleplaySystemPrompt(scenarioId as ScenarioId) },
+          { role: 'user', content: 'Start the conversation. Say your first line.' },
+        ],
+        max_tokens: 200,
+        temperature: 1.0,
+        frequency_penalty: 0.8,
+        presence_penalty: 0.5,
+      });
+      const content = completion.choices[0]?.message?.content?.trim();
+      return NextResponse.json(
+        { content: content || "Hi there. Tell me about yourself." },
+        { headers: { 'Cache-Control': 'no-store' } }
+      );
     }
 
-    const systemPrompt = getRoleplaySystemPrompt(scenarioId as ScenarioId);
+    const theirWords = String(lastUserMsg.content).trim();
+
+    const transcript = messages
+      .filter((m: { role: string; content: string }) => m.role === 'user' || m.role === 'assistant')
+      .filter((m: { content: string }) => !m.content.includes('[Please start'))
+      .map((m: { role: string; content: string }, i: number) => {
+        const speaker = m.role === 'user' ? 'Them' : 'You';
+        return `${speaker}: ${m.content}`;
+      })
+      .join('\n');
+
+    const vibe = VIBES[Math.floor(Math.random() * VIBES.length)];
+    const basePrompt = getRoleplaySystemPrompt(scenarioId as ScenarioId);
+
+    const userPrompt = `Conversation so far:
+${transcript}
+
+They just said: "${theirWords}"
+
+${vibe} Respond to what they said. Reference their words. Be specific. Do NOT say "That's interesting" or "Great."`;
 
     const completion = await openai.chat.completions.create({
       model: 'gpt-4o',
       messages: [
-        { role: 'system', content: systemPrompt },
-        ...messagesToSend,
+        { role: 'system', content: basePrompt },
+        { role: 'user', content: userPrompt },
       ],
       max_tokens: 400,
-      temperature: 1.2,
-      frequency_penalty: 1.5,
-      presence_penalty: 1.0,
+      temperature: 1.0,
+      frequency_penalty: 1.2,
+      presence_penalty: 0.8,
+      seed: Math.floor(Math.random() * 2147483647),
     });
 
     const content = completion.choices[0]?.message?.content?.trim();
@@ -62,7 +99,15 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'No response from AI' }, { status: 500 });
     }
 
-    return NextResponse.json({ content });
+    return NextResponse.json(
+      { content },
+      {
+        headers: {
+          'Cache-Control': 'no-store, no-cache, must-revalidate',
+          'Pragma': 'no-cache',
+        },
+      }
+    );
   } catch (err) {
     console.error('Chat API error:', err);
     const message = err instanceof Error ? err.message : 'Unknown error';
