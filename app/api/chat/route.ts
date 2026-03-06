@@ -43,11 +43,11 @@ export async function POST(req: NextRequest) {
 
     if (!isRealMessage || !lastUserMsg) {
       const completion = await openai.chat.completions.create({
-        model: 'gpt-4o',
-        messages: [
-          { role: 'system', content: getRoleplaySystemPrompt(scenarioId as ScenarioId) },
-          { role: 'user', content: 'Start the conversation. Say your first line.' },
-        ],
+      model: 'gpt-4o',
+      messages: [
+        { role: 'system', content: getRoleplaySystemPrompt(scenarioId as ScenarioId) },
+        { role: 'user', content: 'Start the conversation. Say your first line.' },
+      ],
         max_tokens: 200,
         temperature: 1.0,
         frequency_penalty: 0.8,
@@ -74,7 +74,8 @@ export async function POST(req: NextRequest) {
     const vibe = VIBES[Math.floor(Math.random() * VIBES.length)];
     const basePrompt = getRoleplaySystemPrompt(scenarioId as ScenarioId);
 
-    const userPrompt = `Conversation so far:
+    const uniqueId = Math.random().toString(36).slice(2, 10);
+    const userPrompt = `[${uniqueId}] Conversation so far:
 ${transcript}
 
 They just said: "${theirWords}"
@@ -88,9 +89,9 @@ ${vibe} Respond to what they said. Reference their words. Be specific. Do NOT sa
         { role: 'user', content: userPrompt },
       ],
       max_tokens: 400,
-      temperature: 1.0,
-      frequency_penalty: 1.2,
-      presence_penalty: 0.8,
+      temperature: 1.3,
+      frequency_penalty: 1.5,
+      presence_penalty: 1.0,
       seed: Math.floor(Math.random() * 2147483647),
     });
 

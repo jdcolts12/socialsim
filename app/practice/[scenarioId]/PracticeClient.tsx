@@ -2,7 +2,6 @@
 
 import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
-import { getOpener, getResponse } from '@/lib/aiResponses';
 import { generateFeedback } from '@/lib/feedback';
 import { useVoiceInput } from '@/lib/useVoiceInput';
 import { useVoiceOutput } from '@/lib/useVoiceOutput';
@@ -72,10 +71,11 @@ interface Feedback {
 const MESSAGES_BEFORE_FEEDBACK = 5;
 
 async function fetchAIResponse(scenarioId: string, messages: { role: string; content: string }[]): Promise<string> {
-  const res = await fetch('/api/chat', {
+  const res = await fetch(`/api/chat?t=${Date.now()}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ scenarioId, messages }),
+    cache: 'no-store',
   });
   const data = await res.json();
   if (!res.ok) throw new Error(data.error || 'Failed to get AI response');
@@ -129,9 +129,10 @@ export default function PracticeClient({ scenario }: { scenario: Scenario }) {
           ]);
           setMessages([{ id: '0', role: 'assistant', content: opener }]);
           setUseOpenAI(true);
-        } catch {
+        } catch (err) {
+          console.error('OpenAI failed:', err);
           setMessages([
-            { id: '0', role: 'assistant', content: getOpener(scenario.id as ScenarioId) },
+            { id: '0', role: 'assistant', content: 'Unable to connect. Please check that OPENAI_API_KEY is set in Vercel.' },
           ]);
           setUseOpenAI(false);
         } finally {
@@ -171,8 +172,7 @@ export default function PracticeClient({ scenario }: { scenario: Scenario }) {
         }));
         aiContent = await fetchAIResponse(scenario.id, chatMessages);
       } else {
-        await new Promise((r) => setTimeout(r, 800 + Math.random() * 400));
-        aiContent = getResponse(scenario.id as ScenarioId, userMessageCount);
+        aiContent = "Please refresh the page to reconnect. (OpenAI connection failed.)";
       }
 
       const aiMsg: Message = {
