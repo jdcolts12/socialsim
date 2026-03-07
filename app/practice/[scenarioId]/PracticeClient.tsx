@@ -131,9 +131,11 @@ export default function PracticeClient({ scenario }: { scenario: Scenario }) {
           setUseOpenAI(true);
         } catch (err) {
           console.error('OpenAI failed:', err);
-          setMessages([
-            { id: '0', role: 'assistant', content: 'Unable to connect. Please check that OPENAI_API_KEY is set in Vercel.' },
-          ]);
+          const msg = err instanceof Error ? err.message : '';
+          const content = msg.includes('429') || msg.includes('quota')
+            ? 'OpenAI quota exceeded. Add a payment method at platform.openai.com/account/billing'
+            : 'Unable to connect. Check OPENAI_API_KEY in Vercel and platform.openai.com for errors.';
+          setMessages([{ id: '0', role: 'assistant', content }]);
           setUseOpenAI(false);
         } finally {
           setIsTyping(false);
@@ -172,7 +174,7 @@ export default function PracticeClient({ scenario }: { scenario: Scenario }) {
         }));
         aiContent = await fetchAIResponse(scenario.id, chatMessages);
       } else {
-        aiContent = "Please refresh the page to reconnect. (OpenAI connection failed.)";
+        aiContent = 'Please refresh the page. (OpenAI failed—check billing at platform.openai.com if you see quota errors.)';
       }
 
       const aiMsg: Message = {

@@ -43,7 +43,7 @@ export async function POST(req: NextRequest) {
 
     if (!isRealMessage || !lastUserMsg) {
       const completion = await openai.chat.completions.create({
-      model: 'gpt-4o',
+      model: 'gpt-4o-mini',
       messages: [
         { role: 'system', content: getRoleplaySystemPrompt(scenarioId as ScenarioId) },
         { role: 'user', content: 'Start the conversation. Say your first line.' },
@@ -83,7 +83,7 @@ They just said: "${theirWords}"
 ${vibe} Respond to what they said. Reference their words. Be specific. Do NOT say "That's interesting" or "Great."`;
 
     const completion = await openai.chat.completions.create({
-      model: 'gpt-4o',
+      model: 'gpt-4o-mini',
       messages: [
         { role: 'system', content: basePrompt },
         { role: 'user', content: userPrompt },
